@@ -2,7 +2,7 @@
 # @Author: rish
 # @Date:   2020-07-29 15:26:45
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 22:05:51
+# @Last Modified time: 2020-07-29 22:09:18
 
 
 ### Imports START
@@ -120,7 +120,7 @@ CREATE VIEW latest_zone_ranks as (
 '''
 
 latest_borough_ranks = '''
-CREATE VIEW latest_zone_ranks as (
+CREATE VIEW latest_borough_ranks as (
 	WITH t1 as(
 		SELECT
 			*,
