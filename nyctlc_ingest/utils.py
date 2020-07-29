@@ -2,7 +2,7 @@
 # @Author: rish
 # @Date:   2020-07-29 15:26:49
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 20:22:51
+# @Last Modified time: 2020-07-29 20:46:18
 
 
 ### Imports START
@@ -19,15 +19,15 @@ COLUMNS_TO_LOAD = [
 FILENAMES = {
 	'green_trip': {
 		'columns_map': {
-			'lpep_pickup_datetime': 'pickup_datetime',
-			'lpep_dropoff_datetime': 'dropoff_datetime'
+			'lpep_pickup_datetime': 'pick_up_datetime',
+			'lpep_dropoff_datetime': 'drop_off_datetime'
 		},
 		'identifier': '/green_tripdata_{mi}.csv'
 	},
 	'yellow_trip': {
 		'columns_map': {
-			'tpep_pickup_datetime': 'pickup_datetime',
-			'tpep_dropoff_datetime': 'dropoff_datetime'
+			'tpep_pickup_datetime': 'pick_up_datetime',
+			'tpep_dropoff_datetime': 'drop_off_datetime'
 
 		},
 		'identifier': '/yellow_tripdata_{mi}.csv'
@@ -35,7 +35,7 @@ FILENAMES = {
 }
 
 COLUMNS = [
-	'pickup_datetime', 'dropoff_datetime', 'PULocationID',
+	'pick_up_datetime', 'drop_off_datetime', 'PULocationID',
 	'DOLocationID', 'passenger_count', 'trip_distance', 'total_amount'
 ]
 
@@ -143,7 +143,42 @@ def get_master_rides_frame(latest_export_path, month_identifier):
 
 # [START Function to rank pickup zones by passenger counts]
 def rank_zones_by_passengers(rides_frame, top_k, month_identifier):
-	pass
+	'''
+	Function to rank the pick_up_zone - drop_off_zone tuples by their
+	popularity based on number of passengers, select the top k drop_off_zone
+	for each pick_up_zone and return the ranking required.
+
+	Args:
+		- rides_frame
+		- top_k
+		- month_identifier
+	Return:
+		- ranking
+	'''
+	# Passenger coutns for each tuple
+	ranking = rides_frame.groupby(by=['pick_up_zone', 'drop_off_zone']).sum()
+	ranking.reset_index(inplace=True)
+	ranking.sort_values(
+		by=['pick_up_zone', 'passenger_count'],
+		ascending=[True, False], inplace=True
+	)
+
+	# Selecting targert columns and generating ranking
+	ranking = ranking[['pick_up_zone', 'drop_off_zone', 'passenger_count']]
+	ranking.reset_index(drop=True, inplace=True)
+	ranking['rank'] = (
+		ranking
+		.groupby(['pick_up_zone'])['passenger_count']
+		.rank(method='first', ascending=False)
+		.astype(int)
+	)
+
+	# Selecting top_k ranks for each pick_up_zone
+	ranking = ranking.groupby('pick_up_zone').head(top_k)
+
+	ranking['month'] = month_identifier
+	ranking.drop('passenger_count', axis=1, inplace=True)
+	return ranking
 # [END]
 
 
