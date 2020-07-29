@@ -2,13 +2,14 @@
 # @Author: rish
 # @Date:   2020-07-29 15:25:32
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 17:34:24
+# @Last Modified time: 2020-07-29 18:54:20
 
 
 ### Imports START
 import os
 import sys
 import time
+
 
 import parser
 from nyctlc_ingest import core as nyctlc
@@ -50,7 +51,6 @@ def main(args):
 	Returns:
 		-
 	'''
-
 
 	if args.populate == 'pickup_zone':
 		nyctlc.pickup_zones_by_passengers(

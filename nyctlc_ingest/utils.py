@@ -2,23 +2,142 @@
 # @Author: rish
 # @Date:   2020-07-29 15:26:49
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 17:54:10
+# @Last Modified time: 2020-07-29 20:22:51
 
 
 ### Imports START
 import pandas as pd
+import config
 ### Imports END
 
 
+### Global declarations
+COLUMNS_TO_LOAD = [
+	'PULocationID', 'DOLocationID', 'passenger_count',
+	'trip_distance', 'total_amount'
+]
+FILENAMES = {
+	'green_trip': {
+		'columns_map': {
+			'lpep_pickup_datetime': 'pickup_datetime',
+			'lpep_dropoff_datetime': 'dropoff_datetime'
+		},
+		'identifier': '/green_tripdata_{mi}.csv'
+	},
+	'yellow_trip': {
+		'columns_map': {
+			'tpep_pickup_datetime': 'pickup_datetime',
+			'tpep_dropoff_datetime': 'dropoff_datetime'
+
+		},
+		'identifier': '/yellow_tripdata_{mi}.csv'
+	}
+}
+
+COLUMNS = [
+	'pickup_datetime', 'dropoff_datetime', 'PULocationID',
+	'DOLocationID', 'passenger_count', 'trip_distance', 'total_amount'
+]
+
+
+# [START Function to get the location map]
+def _get_location_map():
+	'''
+	Function to return the location map frame from the csv.
+
+	Args:
+		-
+	Returns:
+		- location_map frame
+	'''
+	location_map = pd.read_csv(config.LOCATION_MAP)
+	location_map = location_map.loc[location_map.Borough != 'Unknown']
+	return location_map
+# [END]
+
+
 # [START Load data for taxi rides]
-def load_data(latest_export_path, month_identifier):
-	pass
+def _load_data(latest_export_path, month_identifier, fileindetifier):
+	'''
+	Load the taxi data csvs into memory as pd frames based on the file
+	identifier, do the required preprocessing and return the required
+	data.
+
+	Args:
+		- latest_export path
+		- month_identifier
+		- fileidentifier
+	Returns:
+		- processed trip data frame
+	'''
+
+	df = pd.read_csv(
+		latest_export_path + FILENAMES[fileindetifier]['identifier'].format(
+			mi=month_identifier
+		),
+		usecols=(COLUMNS_TO_LOAD + list(
+			FILENAMES[fileindetifier]['columns_map'].keys()
+		))
+	)
+	df.rename(columns=FILENAMES[fileindetifier]['columns_map'], inplace=True)
+	df = df[COLUMNS]
+	return df
 # [END]
 
 
 # [START Function to get the final rides frame]
 def get_master_rides_frame(latest_export_path, month_identifier):
-	pass
+	'''
+	Function to get the trip data from the Yellow trip and Green trip CSVs,
+	do the required preprocessing and then create a final master rides frame
+	with locations strings.
+
+	Args:
+		- latest_export_path
+		- month_identifier
+	'''
+
+	# Creating master frame
+	frames = []
+	for _ in FILENAMES.keys():
+		frames.append(
+			_load_data(latest_export_path, month_identifier, _)
+		)
+
+	master_rides_fm = pd.concat(frames)
+	master_rides_fm.reset_index(drop=True, inplace=True)
+
+	# Get location map
+	location_map = _get_location_map()
+
+	# Merge with location map to get locations texts for pickup locations
+	master_rides_fm = pd.merge(
+		master_rides_fm, location_map.rename(
+			columns={
+				'Borough': 'pick_up_borough',
+				'Zone': 'pick_up_zone',
+				'service_zone': 'pick_up_service_zone'
+			}
+		), left_on='PULocationID', right_on='LocationID',
+		how='left'
+	)
+	master_rides_fm.drop('LocationID', axis=1, inplace=True)
+
+	# Merge with location map to get locations texts for dropoff locations
+	master_rides_fm = pd.merge(
+		master_rides_fm,
+		location_map.rename(
+			columns={
+				'Borough': 'drop_off_borough',
+				'Zone': 'drop_off_zone',
+				'service_zone': 'drop_off_service_zone'
+			}
+		), left_on='DOLocationID', right_on='LocationID',
+		how='left'
+	)
+	master_rides_fm.drop('LocationID', axis=1, inplace=True)
+
+	return master_rides_fm
 # [END]
 
 
