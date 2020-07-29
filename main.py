@@ -2,13 +2,16 @@
 # @Author: rish
 # @Date:   2020-07-29 15:25:32
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 15:58:35
+# @Last Modified time: 2020-07-29 17:34:24
 
 
 ### Imports START
-import argparse
+import os
 import sys
 import time
+
+import parser
+from nyctlc_ingest import core as nyctlc
 ### Imports END
 
 
@@ -16,42 +19,28 @@ import time
 script_name = sys.argv[0]
 script_path = script_name[:-8]
 
+# Get arguments received
+args = parser.parser_args()
 
-# [START Function to define parser]
-def parser_args():
-	'''
-	Function to define the structure for command line arguments parser.
 
-	Args:
-		-
-	Retuns:
-		-
-	'''
+if args.env == 'prod':
+	print('prod environment')
+	os.environ['ENV-INDICATOR'] = 'PROD'
+	os.environ['SCPATH'] = script_path
 
-	parser = argparse.ArgumentParser(
-		description='Pipeline to ingest the monthly new york city taxi rides\
-		data exports, perfom required aggregations to get the monthly rankings\
-		and then update them in the database.'
-	)
+	# Activate virtual environment with installed dependencies
+	activate_this = script_path + 'env/bin/activate_this.py'
+	with open(activate_this) as file_:
+		exec(file_.read(), dict(__file__=activate_this))
 
-	parser.add_argument(
-		'--populate', choices=['pickup_zone', 'pickup_borough'],
-		dest='populate', help='Choose of the options to either rank pickup zones\
-		by passenger counts (2-i), or pickup pickup_borough by ride counts'
-	)
-
-	parser.add_argument(
-		'--env', choices=['dev', 'prod'], default='dev',
-		help='Use this argument to specify whether the processes are to be run in a\
-		development environment or production.'
-	)
-
-	return parser
-# [END]
+	# Use project directory
+	sys.path.insert(0, script_path)
+else:
+	os.environ['ENV-INDICATOR'] = 'DEV'
 
 
 # [START Main function for the pipeline]
-def main():
+def main(args):
 	'''
 	Main function for the pipeline that handles the calls for other action
 	specific functions.
@@ -62,7 +51,16 @@ def main():
 		-
 	'''
 
-	args = parser.argument_parser_main()
+
+	if args.populate == 'pickup_zone':
+		nyctlc.pickup_zones_by_passengers(
+			args.export_path, args.month_identifier, args.top_k
+		)
+
+	elif args.populate == 'pickup_borough':
+		nyctlc.pickup_borough_by_rides(
+			args.export_path, args.month_identifier, args.top_k
+		)
 
 	return
 # [END]
@@ -73,7 +71,7 @@ if __name__ == '__main__':
 	process_start = time.time()
 
 	# Call for main function
-	main()
+	main(args)
 
 	process_time = time.time() - process_start
 	mins = int(process_time / 60)
