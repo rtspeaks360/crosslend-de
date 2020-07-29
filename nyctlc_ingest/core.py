@@ -2,7 +2,7 @@
 # @Author: rish
 # @Date:   2020-07-29 15:26:36
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 21:16:32
+# @Last Modified time: 2020-07-29 23:05:14
 
 ### Imports START
 from nyctlc_ingest import utils
@@ -25,15 +25,18 @@ def pickup_zones_by_passengers(
 	Returns:
 		-
 	'''
+	print('Loading data')
 	master_rides_fm = utils.get_master_rides_frame(export_path, month_identifier)
-	print('Loaded trip data into master frame\n')
+	print('Trip data loaded into master frame\n')
 
+	print('Computing ranks')
 	ranks_by_passenger_counts = utils.rank_zones_by_passengers(
 		master_rides_fm, top_k, month_identifier
 	)
-	print('Computed latest ranking based on passenger counts\n')
+	print('Rankings based on pick_up - drop_off zone by passenger counts done.\n')
 
-	utils.upsert_zone_ranks(ranks_by_passenger_counts, top_k)
+	print('Starting process for upsert')
+	utils.upsert_zone_ranks(ranks_by_passenger_counts)
 	print('Pushed the new computed ranks into the database\n')
 	return
 # [END]
@@ -63,7 +66,7 @@ def pickup_borough_by_rides(
 	)
 	print('Computed latest ranking based on passenger counts\n')
 
-	utils.upsert_borough_ranks(rank_by_ride_counts, top_k)
+	utils.upsert_borough_ranks(rank_by_ride_counts)
 	print('Pushed the new computed ranks into the database\n')
 	return
 # [END]

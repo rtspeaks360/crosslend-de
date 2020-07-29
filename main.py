@@ -2,7 +2,7 @@
 # @Author: rish
 # @Date:   2020-07-29 15:25:32
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 18:54:20
+# @Last Modified time: 2020-07-29 23:06:48
 
 
 ### Imports START
@@ -69,6 +69,9 @@ def main(args):
 if __name__ == '__main__':
 	# Process start time
 	process_start = time.time()
+
+	print('Your namespace - ' + str(args))
+	print()
 
 	# Call for main function
 	main(args)

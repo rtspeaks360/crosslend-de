@@ -2,7 +2,7 @@
 # @Author: rish
 # @Date:   2020-07-29 15:26:49
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 22:54:24
+# @Last Modified time: 2020-07-29 23:02:27
 
 
 ### Imports START
@@ -193,6 +193,11 @@ def rank_zones_by_passengers(rides_frame, top_k, month_identifier):
 	ranking['month'] = month_identifier
 	ranking.drop('passenger_count', axis=1, inplace=True)
 
+	ranking.rename(
+		columns={'pick_up_zone': 'pick_up', 'drop_off_zone': 'drop_off'},
+		inplace=True
+	)
+
 	print('Number of ranks generatred - ' + str(ranking.shape[0]))
 	return ranking
 # [END]
@@ -250,13 +255,63 @@ def rank_boroughs_by_rides(rides_frame, top_k, month_identifier):
 
 
 # [START]
-def upsert_zone_ranks(zone_ranks, top_k):
-	pass
+def upsert_zone_ranks(zone_ranks):
+	'''
+	Function to work out the ranks to be updated into the database
+	after comparing the current ranks to already recorded ranks and
+	then  do the inserts for the changes.
+
+	Args:
+		- ranking for zones
+	Returns:
+		-
+	'''
+
+	# Get the current ranks
+	ranking_db = pd.read_sql('SELECT * FROM latest_zone_ranks', con=engine)
+
+	# Ranks changed from previously recorded info
+	upsert_master = pd.merge(
+		zone_ranks, ranking_db, on=['pick_up', 'drop_off', 'rank'],
+		how='left', indicator='Exist'
+	)
+	upsert_master = upsert_master.loc[upsert_master.Exist == 'left_only']
+	upsert_master.drop('Exist', axis=1, inplace=True)
+
+	# If more than one ranks updated
+	if upsert_master.shape[0] > 0:
+		# Initialize session and update ranking in db
+		session = DBSession()
+
+		# Insert statement
+		insert_stmt = (
+			postgresql
+			.insert(models.ZoneHistory.__table__)
+			.values(upsert_master.to_dict(orient='records'))
+		)
+
+		try:
+			session.execute(insert_stmt)
+			session.commit()
+			print(
+				'Number of rank changes pushed into the db - ' + str(
+					upsert_master.shape[0]
+				)
+			)
+		except exc.SQLAlchemyError as e:
+			print(e._message)
+			session.rollback()
+
+		session.close()
+	else:
+		print('No new rank changes found.')
+
+	return
 # [END]
 
 
 # [START Function to work out ranks to update and then insert]
-def upsert_borough_ranks(borough_ranks, top_k):
+def upsert_borough_ranks(borough_ranks):
 	'''
 	Function to work out the ranks to be updated into the database
 	after comparing the current ranks to already recorded ranks and
@@ -294,7 +349,7 @@ def upsert_borough_ranks(borough_ranks, top_k):
 			session.execute(insert_stmt)
 			session.commit()
 			print(
-				'Number of rank changes pushed into the db' + str(
+				'Number of rank changes pushed into the db - ' + str(
 					upsert_master.shape[0]
 				)
 			)
