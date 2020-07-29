@@ -2,7 +2,7 @@
 # @Author: rish
 # @Date:   2020-07-29 15:25:32
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 23:06:48
+# @Last Modified time: 2020-07-30 00:39:58
 
 
 ### Imports START
@@ -12,7 +12,6 @@ import time
 
 
 import parser
-from nyctlc_ingest import core as nyctlc
 ### Imports END
 
 
@@ -40,6 +39,10 @@ else:
 	os.environ['ENV-INDICATOR'] = 'DEV'
 
 
+### Imports
+from nyctlc_ingest import core as nyctlc
+
+
 # [START Main function for the pipeline]
 def main(args):
 	'''
@@ -61,6 +64,9 @@ def main(args):
 		nyctlc.pickup_borough_by_rides(
 			args.export_path, args.month_identifier, args.top_k
 		)
+
+	elif args.initdb:
+		nyctlc.utils.initialize_database()
 
 	return
 # [END]

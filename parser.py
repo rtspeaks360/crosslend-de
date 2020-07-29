@@ -2,7 +2,7 @@
 # @Author: rish
 # @Date:   2020-07-29 16:55:41
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 20:40:54
+# @Last Modified time: 2020-07-30 00:14:53
 
 ### Imports
 import argparse
@@ -44,6 +44,12 @@ def parser_args():
 	parser.add_argument(
 		'--top_k', dest='top_k', help='Use this argument to specify the number of\
 		top entries you want to limit.', type=int
+	)
+
+	parser.add_argument(
+		'--initialize_db', dest='initdb', action='store_true',
+		help='Use this argument to initialize the database tables\
+		and views to serve the problem at hand'
 	)
 
 	parser.add_argument(

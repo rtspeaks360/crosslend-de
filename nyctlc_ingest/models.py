@@ -2,7 +2,7 @@
 # @Author: rish
 # @Date:   2020-07-29 15:26:45
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 22:09:18
+# @Last Modified time: 2020-07-30 00:28:23
 
 
 ### Imports START
@@ -80,6 +80,46 @@ class BoroughHistory(Base):
 # [END]
 
 
+### Queries for views Q-4
+latest_zone_ranks_create_view_query = '''
+CREATE OR REPLACE VIEW latest_zone_ranks as (
+	WITH t1 as(
+		SELECT
+			*,
+			ROW_NUMBER() OVER (
+				PARTITION BY pick_up, rank ORDER BY month DESC
+			) AS rn,
+			ROW_NUMBER() OVER (
+				PARTITION BY pick_up, drop_off ORDER BY month DESC
+			) AS rn2
+		FROM zone_history
+	)
+	SELECT
+		t1.pick_up, t1.drop_off, t1.rank
+	FROM t1 where t1.rn = 1 and t1.rn2 = 1
+)
+'''
+
+latest_borough_ranks_create_view_query = '''
+CREATE OR REPLACE VIEW latest_borough_ranks as (
+	WITH t1 as(
+		SELECT
+			*,
+			ROW_NUMBER() OVER (
+				PARTITION BY pick_up, rank ORDER BY month DESC
+			) AS rn,
+			ROW_NUMBER() OVER (
+				PARTITION BY pick_up, drop_off ORDER BY month DESC
+			) AS rn2
+		FROM borough_history
+	)
+	SELECT
+		t1.pick_up, t1.drop_off, t1.rank
+	FROM t1 where t1.rn = 1 and t1.rn2 = 1
+)
+'''
+
+
 # [START Code to create the database from all the above schema classes]
 def convert_classes_into_tables(connection_string):
 	'''
@@ -98,45 +138,6 @@ def convert_classes_into_tables(connection_string):
 	return
 # [END]
 
-
-### Queries for views Q-4
-latest_zone_ranks = '''
-CREATE VIEW latest_zone_ranks as (
-	WITH t1 as(
-		SELECT
-			*,
-			ROW_NUMBER() OVER (
-				PARTITION BY pick_up, rank ORDER BY month DESC
-			) AS rn,
-			ROW_NUMBER() OVER (
-				PARTITION BY pick_up, drop_off ORDER BY month DESC
-			) AS rn2
-		FROM zone_history
-	)
-	SELECT
-		pick_up, drop_off, rank
-	FROM t1 where rn = 1 and rn2 = 1
-)
-'''
-
-latest_borough_ranks = '''
-CREATE VIEW latest_borough_ranks as (
-	WITH t1 as(
-		SELECT
-			*,
-			ROW_NUMBER() OVER (
-				PARTITION BY pick_up, rank ORDER BY month DESC
-			) AS rn,
-			ROW_NUMBER() OVER (
-				PARTITION BY pick_up, drop_off ORDER BY month DESC
-			) AS rn2
-		FROM borough_history
-	)
-	SELECT
-		pick_up, drop_off, rank
-	FROM t1 where rn = 1 and rn2 = 1
-)
-'''
 
 ### Creating schema in database START
 if __name__ == '__main__':

@@ -2,7 +2,7 @@
 # @Author: rish
 # @Date:   2020-07-29 15:26:49
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 23:02:27
+# @Last Modified time: 2020-07-30 00:41:41
 
 
 ### Imports START
@@ -360,6 +360,39 @@ def upsert_borough_ranks(borough_ranks):
 		session.close()
 	else:
 		print('No new rank changes found.')
+
+	return
+# [END]
+
+
+# [START Function to create models and views in the databse]
+def initialize_database():
+	'''
+	Function to create models and views in the databse. Use this function to
+	setup the database for the ETLs.
+
+	Args:
+		-
+	Returns:
+		-
+	'''
+
+	# Create db tables with constraints
+	models.convert_classes_into_tables(config.DB_CONN_STRING)
+
+	# Initialize pg connection
+	conn = pg.connect(config.PG_CONN_STRING)
+	cursor = conn.cursor()
+
+	# Executing queries to create views
+	cursor.execute(models.latest_zone_ranks_create_view_query)
+	cursor.execute(models.latest_borough_ranks_create_view_query)
+
+	# Commit and close pg connection
+	conn.commit()
+	conn.close()
+
+	print('Initialized database with requierd tables and views.\n')
 
 	return
 # [END]
