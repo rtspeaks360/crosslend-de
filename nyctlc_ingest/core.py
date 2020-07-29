@@ -2,7 +2,7 @@
 # @Author: rish
 # @Date:   2020-07-29 15:26:36
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 20:44:00
+# @Last Modified time: 2020-07-29 21:16:32
 
 ### Imports START
 from nyctlc_ingest import utils
@@ -58,7 +58,7 @@ def pickup_borough_by_rides(
 	master_rides_fm = utils.get_master_rides_frame(export_path, month_identifier)
 	print('Loaded trip data into master frame\n')
 
-	rank_by_ride_counts = utils.rank_boroughs_by_passengers(
+	rank_by_ride_counts = utils.rank_boroughs_by_rides(
 		master_rides_fm, top_k, month_identifier
 	)
 	print('Computed latest ranking based on passenger counts\n')
