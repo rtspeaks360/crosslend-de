@@ -2,7 +2,7 @@
 # @Author: rish
 # @Date:   2020-07-29 15:26:49
 # @Last Modified by:   rish
-# @Last Modified time: 2020-07-29 20:46:18
+# @Last Modified time: 2020-07-29 21:04:34
 
 
 ### Imports START
@@ -184,7 +184,38 @@ def rank_zones_by_passengers(rides_frame, top_k, month_identifier):
 
 # [START Function to rank pickup borughs by ride counts]
 def rank_boroughs_by_passengers(rides_frame, top_k, month_identifier):
-	pass
+	'''
+	Function to rank the pick_up_borough - drop_off_borough tuples by their
+	popularity based on number of rides, select the top k drop_off_borough
+	for each pick_up_borough and return the ranking required.
+
+	Args:
+		- rides_frame
+		- top_k
+		- month_identifier
+	Return:
+		- ranking
+	'''
+
+	# Ride counts for each tuple
+	ranking = rides_frame.groupby(by=['pick_up_borough', 'drop_off_borough']).count()
+	ranking.reset_index(inplace=True)
+	ranking = ranking[['pick_up_borough', 'drop_off_borough', 'pick_up_datetime']]
+	ranking.rename(columns = {'pick_up_datetime':'rides'}, inplace=True)
+	ranking.sort_values(['pick_up_borough', 'rides'], ascending=[True, False], inplace=True)
+	ranking.reset_index(drop=True, inplace=True)
+
+	# Generating ranks based on rides for each pick_up_borough
+	ranking['rank'] = (
+		ranking
+		.groupby('pick_up_borough')['rides']
+		.rank(method='first', ascending=False)
+		.astype(int)
+	)
+
+	ranking['month'] = month_identifier
+	ranking.drop('rides', axis=1, inplace=True)
+	return ranking
 # [END]
 
 
